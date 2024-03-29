@@ -2,9 +2,9 @@ import 'package:dartz/dartz.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:web3dart/web3dart.dart';
 import 'package:web3dart_example/models/staking_model.dart';
-import 'package:http/http.dart' as http;
+import 'package:web3dart_example/web3/blocs/wallet_connect_bloc.dart';
+import 'package:web3modal_flutter/web3modal_flutter.dart';
 
 part 'staking_event.dart';
 
@@ -12,13 +12,12 @@ part 'staking_state.dart';
 
 part 'staking_bloc.freezed.dart';
 
-Web3Client getWeb3Client() => Web3Client(
-      'https://data-seed-prebsc-1-s1.binance.org:8545',
-      http.Client(),
-    );
-
 class StakingBloc extends Bloc<StakingEvent, StakingState> {
-  StakingBloc() : super(const _StakingState()) {
+  final WalletConnectBloc walletConnect;
+
+  StakingBloc({
+    required this.walletConnect,
+  }) : super(const _StakingState()) {
     on<StakingEvent>(
       (event, emit) async {
         await event.when(
@@ -39,12 +38,11 @@ class StakingBloc extends Bloc<StakingEvent, StakingState> {
               ),
             );
 
-            final pools = await getWeb3Client().call(
-              contract: deployedContract,
-              function: deployedContract.function(
-                'pools',
-              ),
-              params: [
+            final pools = await walletConnect.w3mService.requestReadContract(
+              deployedContract: deployedContract,
+              functionName: 'pools',
+              rpcUrl: 'https://bsc-testnet-rpc.publicnode.com',
+              parameters: [
                 BigInt.from(0),
               ],
             );
